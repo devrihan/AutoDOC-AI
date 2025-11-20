@@ -5,6 +5,8 @@ from config import settings
 
 security = HTTPBearer(auto_error=False)
 
+# ... imports ...
+
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
     if credentials is None:
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -12,13 +14,16 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
     token = credentials.credentials
 
     try:
+        # ... your existing decoding logic ...
         payload = jwt.decode(
             token,
             settings.JWT_SECRET,
-            algorithms=["HS256"]
+            algorithms=["HS256"],
+            audience="authenticated",
+            options={"verify_aud": False}
         )
-
-        user_id = payload.get("sub")  # 👍 correct Supabase user ID field
+        
+        user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token payload")
 
@@ -26,12 +31,13 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
             "user_id": user_id,
             "email": payload.get("email"),
             "role": payload.get("role", "authenticated"),
+            "token": token, # 👈 ADD THIS LINE (Pass the raw token back)
             "raw": payload
         }
 
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT Verification Error: {str(e)}")
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-
 
 def optional_auth(credentials: HTTPAuthorizationCredentials = Security(security)):
     if credentials is None:

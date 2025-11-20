@@ -14,12 +14,17 @@ class FeedbackPayload(BaseModel):
 @router.post("/feedback")
 def add_feedback(payload: FeedbackPayload, user = Depends(verify_token)):
     sb = supabase_client()
+    
+    # FIX: Authenticate with Supabase so RLS allows the insert
+    sb.postgrest.auth(user["token"])
+
     data = {
         "section_id": payload.section_id,
         "is_liked": payload.is_liked,
         "comment": payload.comment,
     }
     res = sb.table("feedback").insert(data).execute()
+    
     if getattr(res, "status_code", None) not in (200, 201, None, 0):
         raise HTTPException(status_code=500, detail="Failed to save feedback")
     return {"status": "ok"}
