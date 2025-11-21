@@ -43,6 +43,33 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // const handleSignUp = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+
+  //   try {
+  //     const { data, error } = await supabase.auth.signUp({
+  //       email,
+  //       password,
+  //       options: {
+  //         data: { full_name: fullName },
+  //       },
+  //     });
+
+  //     if (error) throw error;
+
+  //     if (data.session?.access_token) {
+  //       localStorage.setItem("token", data.session.access_token);
+  //       navigate("/dashboard");
+  //     }
+
+  //     toast.success("Account created successfully!");
+  //   } catch (error: any) {
+  //     toast.error(error.message || "Failed to sign up");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -58,19 +85,23 @@ const Auth = () => {
 
       if (error) throw error;
 
+      // CHECK: If we got a session, the user is logged in (verification disabled)
       if (data.session?.access_token) {
         localStorage.setItem("token", data.session.access_token);
+        toast.success("Account created successfully!");
         navigate("/dashboard");
+      } else {
+        // CHECK: If no session, but no error, email verification is required
+        toast.info(
+          "Account created! Please check your email to verify your account."
+        );
       }
-
-      toast.success("Account created successfully!");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign up");
     } finally {
       setLoading(false);
     }
   };
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

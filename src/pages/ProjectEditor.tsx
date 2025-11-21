@@ -34,6 +34,7 @@ type Section = {
   id: string;
   title: string;
   content: string | null;
+  image_prompt?: string | null;
   order_index: number;
   project_id: string;
 };
@@ -60,6 +61,10 @@ const ProjectEditor = () => {
   >(new Map());
   const [refining, setRefining] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+  const [showImageInput, setShowImageInput] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadProject();
@@ -184,6 +189,28 @@ const ProjectEditor = () => {
       console.error(error);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleSaveImagePrompt = async (sectionId: string) => {
+    const prompt = imagePrompts[sectionId];
+    if (!prompt) return;
+
+    try {
+      const token = await getToken();
+      await fetch(`${API_URL}/api/sections/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ section_id: sectionId, image_prompt: prompt }),
+      });
+      toast.success("Image prompt saved!");
+      await loadProject(); // Refresh to confirm save
+      setShowImageInput((prev) => ({ ...prev, [sectionId]: false }));
+    } catch (e) {
+      toast.error("Failed to save image prompt");
     }
   };
 

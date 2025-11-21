@@ -10,7 +10,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Presentation, Loader2, LogOut } from "lucide-react";
+import {
+  Plus,
+  FileText,
+  Presentation,
+  Loader2,
+  LogOut,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Session } from "@supabase/supabase-js";
 
@@ -85,6 +92,39 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
+  const handleDeleteProject = async (
+    e: React.MouseEvent,
+    projectId: string
+  ) => {
+    e.stopPropagation(); // Prevent opening the project when clicking delete
+
+    if (!confirm("Are you sure you want to delete this project?")) return;
+
+    try {
+      const token = session?.access_token;
+      if (!token) return;
+
+      const res = await fetch(`${API_URL}/api/projects/${projectId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.detail || "Failed to delete project");
+      }
+
+      toast.success("Project deleted successfully");
+
+      // Optimistically update the UI
+      setProjects(projects.filter((p) => p.id !== projectId));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -154,9 +194,15 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
+              // <Card
+              //   key={project.id}
+              //   className="hover:shadow-lg transition-shadow cursor-pointer"
+              //   onClick={() => navigate(`/project/${project.id}`)}
+              // >
               <Card
                 key={project.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer"
+                // Add "relative" and "group" here 👇
+                className="hover:shadow-lg transition-shadow cursor-pointer relative group"
                 onClick={() => navigate(`/project/${project.id}`)}
               >
                 <CardHeader>
@@ -178,6 +224,15 @@ const Dashboard = () => {
                         </Badge>
                       </div>
                     </div>
+                    {/* 3. Add the Delete Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => handleDeleteProject(e, project.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
