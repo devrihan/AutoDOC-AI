@@ -2,6 +2,13 @@
 
 AutoDoc AI is a full-stack application designed to automate the creation of professional documents. By leveraging Google's Gemini AI and Supabase, it allows users to generate structured Word documents and PowerPoint presentations from simple text prompts.
 
+## Repository Structure
+
+This project uses a monorepo-like structure within a single repository, linking directly to the respective source directories:
+
+* **[Backend Repo (FastAPI/Python)](https://github.com/devrihan/backend-ocean)**: Contains the core API for AI generation, document processing, and database routing.
+* **[Frontend Repo (React/TypeScript)](https://github.com/devrihan/ocean-front)**: Contains the user interface built with React, Vite, and Tailwind CSS.
+
 ## Features
 
 * **AI Content Generation**: Uses Google Gemini to create outlines, draft content, and refine text.
@@ -159,3 +166,4 @@ To make the application work, you need to set up the database schema and storage
     * Use the "Refine" input to ask AI to rewrite specific sections.
     * Upload images to sections.
     * Click **Export** to download the final `.docx` or `.pptx` file.
+
