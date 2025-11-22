@@ -11,7 +11,7 @@ const Index = () => {
         <div className="inline-flex items-center justify-center w-20 h-20 bg-primary rounded-3xl mb-6">
           <FileText className="w-10 h-10 text-primary-foreground" />
         </div>
-        <h1 className="text-5xl font-bold text-foreground mb-4">DocuMate AI</h1>
+        <h1 className="text-5xl font-bold text-foreground mb-4">AutoDoc AI</h1>
         <p className="text-xl text-muted-foreground mb-8">
           Generate professional documents and presentations with AI assistance
         </p>
