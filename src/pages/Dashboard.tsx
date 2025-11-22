@@ -40,13 +40,12 @@ const Dashboard = () => {
   const [projects, setProjects] = useState<Project[]>([]);
 
   useEffect(() => {
-    // Check auth status
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/auth");
       } else {
         setSession(session);
-        loadProjects(session.access_token); // pass token
+        loadProjects(session.access_token);
       }
     });
 
@@ -96,7 +95,7 @@ const Dashboard = () => {
     e: React.MouseEvent,
     projectId: string
   ) => {
-    e.stopPropagation(); // Prevent opening the project when clicking delete
+    e.stopPropagation();
 
     if (!confirm("Are you sure you want to delete this project?")) return;
 
@@ -118,7 +117,6 @@ const Dashboard = () => {
 
       toast.success("Project deleted successfully");
 
-      // Optimistically update the UI
       setProjects(projects.filter((p) => p.id !== projectId));
     } catch (error: any) {
       toast.error(error.message);
@@ -194,14 +192,8 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              // <Card
-              //   key={project.id}
-              //   className="hover:shadow-lg transition-shadow cursor-pointer"
-              //   onClick={() => navigate(`/project/${project.id}`)}
-              // >
               <Card
                 key={project.id}
-                // Add "relative" and "group" here 👇
                 className="hover:shadow-lg transition-shadow cursor-pointer relative group"
                 onClick={() => navigate(`/project/${project.id}`)}
               >
@@ -224,7 +216,6 @@ const Dashboard = () => {
                         </Badge>
                       </div>
                     </div>
-                    {/* 3. Add the Delete Button */}
                     <Button
                       variant="ghost"
                       size="icon"

@@ -25,6 +25,13 @@ import {
 import { toast } from "sonner";
 
 type DocumentType = "word" | "powerpoint";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -36,9 +43,9 @@ const NewProject = () => {
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
   const [sections, setSections] = useState<string[]>(["Introduction"]);
+  const [pptTemplate, setPptTemplate] = useState("default");
 
   useEffect(() => {
-    // Check auth status
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/auth");
@@ -57,12 +64,6 @@ const NewProject = () => {
     setSections(newSections);
   };
 
-  // -------------------------------
-  // ⭐ GENERATE OUTLINE (FastAPI)
-  // -------------------------------
-  // -------------------------------
-  // ⭐ GENERATE OUTLINE (FastAPI)
-  // -------------------------------
   const handleGenerateOutline = async () => {
     if (!topic.trim()) {
       toast.error("Please enter a topic first");
@@ -89,9 +90,8 @@ const NewProject = () => {
 
       if (!res.ok) throw new Error(json.detail || "Failed to generate outline");
 
-      // ⭐ FIX: use json.outline instead of json.sections
       if (json.outline && Array.isArray(json.outline)) {
-        const titles = json.outline.map((item: any) => item.title); // extract titles
+        const titles = json.outline.map((item: any) => item.title);
         setSections(titles);
         toast.success("Outline generated successfully!");
       }
@@ -102,9 +102,6 @@ const NewProject = () => {
     }
   };
 
-  // -------------------------------
-  // ⭐ CREATE PROJECT (FastAPI)
-  // -------------------------------
   const handleCreateProject = async () => {
     if (!title.trim()) return toast.error("Please enter a project title");
     if (!topic.trim()) return toast.error("Please enter a topic");
@@ -118,7 +115,6 @@ const NewProject = () => {
         ?.access_token;
       if (!token) throw new Error("Not authenticated");
 
-      // 1️⃣ CREATE PROJECT
       const resProject = await fetch(`${API_URL}/api/projects/create`, {
         method: "POST",
         headers: {
@@ -129,6 +125,7 @@ const NewProject = () => {
           title,
           document_type: documentType,
           topic,
+          ppt_template: pptTemplate,
         }),
       });
 
@@ -137,7 +134,6 @@ const NewProject = () => {
 
       const project = projectJson.project;
 
-      // 2️⃣ CREATE SECTIONS
       const sectionsToInsert = sections.map((sectionTitle, index) => ({
         project_id: project.id,
         title: sectionTitle,
@@ -249,6 +245,32 @@ const NewProject = () => {
                   </div>
                 </RadioGroup>
               </div>
+              {/* TEMPLATE SELECTION */}
+              {documentType === "powerpoint" && (
+                <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-2">
+                  <Label>Presentation Template</Label>
+                  <Select value={pptTemplate} onValueChange={setPptTemplate}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default (Blank)</SelectItem>
+
+                      <SelectItem value="basic">Minimalistic</SelectItem>
+                      <SelectItem value="Product">
+                        Product pitch deck
+                      </SelectItem>
+                      <SelectItem value="Geometric">
+                        Geometric Colour block
+                      </SelectItem>
+                      <SelectItem value="Scientific">
+                        Scientific Discovery
+                      </SelectItem>
+                      <SelectItem value="basic">Minimalistic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </CardContent>
           </Card>
 

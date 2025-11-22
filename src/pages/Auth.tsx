@@ -22,11 +22,10 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
 
-  // Check if user is already logged in
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        localStorage.setItem("token", session.access_token); // Save JWT
+        localStorage.setItem("token", session.access_token);
         navigate("/dashboard");
       }
     });
@@ -42,10 +41,6 @@ const Auth = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
-
-  // const handleSignUp = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setLoading(true);
 
   //   try {
   //     const { data, error } = await supabase.auth.signUp({
@@ -85,13 +80,11 @@ const Auth = () => {
 
       if (error) throw error;
 
-      // CHECK: If we got a session, the user is logged in (verification disabled)
       if (data.session?.access_token) {
         localStorage.setItem("token", data.session.access_token);
         toast.success("Account created successfully!");
         navigate("/dashboard");
       } else {
-        // CHECK: If no session, but no error, email verification is required
         toast.info(
           "Account created! Please check your email to verify your account."
         );

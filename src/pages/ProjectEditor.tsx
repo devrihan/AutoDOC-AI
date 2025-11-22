@@ -37,6 +37,7 @@ type Section = {
   image_prompt?: string | null;
   order_index: number;
   project_id: string;
+  image_url?: string | null;
 };
 
 type Feedback = {
@@ -68,12 +69,8 @@ const ProjectEditor = () => {
 
   useEffect(() => {
     loadProject();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // -------------------------
-  // Helper: get token
-  // -------------------------
   const getToken = async () => {
     const session = await supabase.auth.getSession();
     return (
@@ -83,9 +80,6 @@ const ProjectEditor = () => {
     );
   };
 
-  // -------------------------
-  // Load project + sections + feedback from backend
-  // -------------------------
   const loadProject = async () => {
     setLoading(true);
     try {
@@ -108,11 +102,9 @@ const ProjectEditor = () => {
       const proj = json.project;
       setProject(proj);
 
-      // sections should come as proj.sections (backend: select("*, sections(*)"))
       const secs: Section[] = proj.sections || [];
       setSections(secs);
 
-      // build feedback map if provided by backend; otherwise fetch separately
       const fbMap = new Map<string, Feedback>();
       if (json.feedback && Array.isArray(json.feedback)) {
         json.feedback.forEach((f: Feedback) => fbMap.set(f.section_id, f));
@@ -127,9 +119,6 @@ const ProjectEditor = () => {
     }
   };
 
-  // -------------------------
-  // Generate content for all sections
-  // -------------------------
   const handleGenerateContent = async () => {
     if (!project) return;
     setGenerating(true);
@@ -139,7 +128,6 @@ const ProjectEditor = () => {
       if (!token) throw new Error("Not authenticated");
 
       for (const section of sections) {
-        // Call FastAPI generate-content endpoint
         const genRes = await fetch(`${API_URL}/api/generate-content`, {
           method: "POST",
           headers: {
@@ -163,7 +151,6 @@ const ProjectEditor = () => {
 
         const newContent = genJson.content;
 
-        // Update section content via backend
         const updRes = await fetch(`${API_URL}/api/sections/update`, {
           method: "POST",
           headers: {
@@ -192,31 +179,50 @@ const ProjectEditor = () => {
     }
   };
 
-  const handleSaveImagePrompt = async (sectionId: string) => {
-    const prompt = imagePrompts[sectionId];
-    if (!prompt) return;
-
+  const handleImageUpload = async (sectionId: string, file: File) => {
     try {
+      setLoading(true);
       const token = await getToken();
-      await fetch(`${API_URL}/api/sections/update`, {
+      if (!token) throw new Error("Not authenticated");
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${sectionId}-${Math.random()}.${fileExt}`;
+      const filePath = `private/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("project_assets")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("project_assets").getPublicUrl(filePath);
+
+      const res = await fetch(`${API_URL}/api/sections/update`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ section_id: sectionId, image_prompt: prompt }),
+        body: JSON.stringify({
+          section_id: sectionId,
+          image_url: publicUrl,
+        }),
       });
-      toast.success("Image prompt saved!");
-      await loadProject(); // Refresh to confirm save
-      setShowImageInput((prev) => ({ ...prev, [sectionId]: false }));
-    } catch (e) {
-      toast.error("Failed to save image prompt");
+
+      if (!res.ok) throw new Error("Failed to save image URL");
+
+      toast.success("Image uploaded successfully!");
+      await loadProject();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload image");
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // -------------------------
-  // Refine a single section
-  // -------------------------
   const handleRefineSection = async (sectionId: string) => {
     const prompt = refinementPrompts.get(sectionId);
     if (!prompt?.trim()) {
@@ -233,7 +239,6 @@ const ProjectEditor = () => {
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");
 
-      // Call refine endpoint
       const res = await fetch(`${API_URL}/api/refine-content`, {
         method: "POST",
         headers: {
@@ -252,7 +257,6 @@ const ProjectEditor = () => {
 
       const refined = json.content;
 
-      // Update section content
       const updRes = await fetch(`${API_URL}/api/sections/update`, {
         method: "POST",
         headers: {
@@ -268,7 +272,6 @@ const ProjectEditor = () => {
       if (!updRes.ok)
         throw new Error(updJson.detail || "Failed to update refined content");
 
-      // Record refinement (backend should save this)
       const refRecord = await fetch(`${API_URL}/api/refinements/create`, {
         method: "POST",
         headers: {
@@ -287,7 +290,6 @@ const ProjectEditor = () => {
       }
 
       await loadProject();
-      // clear prompt for this section
       setRefinementPrompts((prev) => {
         const copy = new Map(prev);
         copy.set(sectionId, "");
@@ -307,9 +309,6 @@ const ProjectEditor = () => {
     }
   };
 
-  // -------------------------
-  // Feedback (like/dislike)
-  // -------------------------
   const handleFeedback = async (sectionId: string, isLiked: boolean) => {
     try {
       const token = await getToken();
@@ -326,14 +325,12 @@ const ProjectEditor = () => {
         body: JSON.stringify({
           section_id: sectionId,
           is_liked: isLiked,
-          // if you want to include comment use comment field
         }),
       });
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.detail || "Failed to save feedback");
 
-      // reload feedback/project
       await loadProject();
     } catch (error: any) {
       toast.error(error.message || "Failed to save feedback");
@@ -341,9 +338,6 @@ const ProjectEditor = () => {
     }
   };
 
-  // -------------------------
-  // Comment save on blur
-  // -------------------------
   const handleCommentChange = async (sectionId: string, comment: string) => {
     try {
       const token = await getToken();
@@ -372,9 +366,6 @@ const ProjectEditor = () => {
     }
   };
 
-  // -------------------------
-  // Export document (download blob)
-  // -------------------------
   const handleExport = async () => {
     if (!project) return;
 
@@ -383,7 +374,6 @@ const ProjectEditor = () => {
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");
 
-      // backend should return application/octet-stream or proper file type
       const response = await fetch(`${API_URL}/api/export-document`, {
         method: "POST",
         headers: {
@@ -517,6 +507,46 @@ const ProjectEditor = () => {
                   rows={8}
                   className="resize-none"
                 />
+
+                {/* IMAGE UPLOAD SECTION */}
+                <div className="space-y-2 border rounded-md p-3 bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Section Image
+                    </span>
+                    {section.image_url && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive h-auto p-0"
+                        onClick={() => {}}
+                      ></Button>
+                    )}
+                  </div>
+
+                  {section.image_url ? (
+                    <div className="relative w-full h-48 rounded-md overflow-hidden border bg-background">
+                      <img
+                        src={section.image_url}
+                        alt="Section attachment"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        className="text-sm cursor-pointer h-auto file:bg-primary file:text-primary-foreground file:border-0 file:rounded-md file:mr-4 file:px-4 file:py-2 hover:file:bg-primary/90"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            handleImageUpload(section.id, e.target.files[0]);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   <div className="flex gap-2">
