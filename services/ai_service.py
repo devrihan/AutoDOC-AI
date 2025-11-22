@@ -1,4 +1,3 @@
-# ocean-back/services/ai_service.py
 import httpx
 from typing import List, Dict, Any
 from config import settings
@@ -9,7 +8,6 @@ class AIService:
         self.model = settings.GEMINI_MODEL
         self.url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
 
-    # INCREASED default max_tokens from 800 -> 4000 to prevent cut-offs
     async def generate_completion(self, messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 4000) -> Dict[str, Any]:
         # Build prompt
         prompt_lines = []
@@ -37,7 +35,6 @@ class AIService:
         headers = {"Content-Type": "application/json"}
 
         try:
-            # Increased timeout to 60s because generating 4000 tokens takes longer
             async with httpx.AsyncClient(timeout=60.0) as client:
                 resp = await client.post(f"{self.url}?key={self.api_key}", json=payload, headers=headers)
                 data = resp.json()
@@ -52,11 +49,9 @@ class AIService:
                     if "candidates" in data and len(data["candidates"]) > 0:
                         candidate = data["candidates"][0]
                         
-                        # Log if the model stopped early
                         if candidate.get("finishReason") != "STOP":
                             print(f"Warning: Generation stopped due to {candidate.get('finishReason')}")
 
-                        # Extract text safely
                         if "content" in candidate and "parts" in candidate["content"]:
                             content = candidate["content"]["parts"][0]["text"]
                 except Exception as e:
@@ -64,7 +59,6 @@ class AIService:
                     pass
 
                 if not content:
-                    # Fallback: Don't show raw JSON to the user
                     print(f"Raw Response (Empty content): {data}")
                     content = "Error: The AI could not generate content for this section. Please try refining the title or regenerating."
 

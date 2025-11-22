@@ -1,11 +1,9 @@
-# ocean-back/supabase_client.py
 from supabase import create_client, Client
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# support VITE_* fallback in case dev used the frontend env
 SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("VITE_SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("VITE_SUPABASE_ANON_KEY")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("VITE_SUPABASE_SERVICE_ROLE_KEY")

@@ -1,4 +1,3 @@
-# ocean-back/routers/refine_content.py
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from auth import verify_token

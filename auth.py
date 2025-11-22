@@ -5,7 +5,6 @@ from config import settings
 
 security = HTTPBearer(auto_error=False)
 
-# ... imports ...
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
     if credentials is None:
@@ -14,7 +13,6 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
     token = credentials.credentials
 
     try:
-        # ... your existing decoding logic ...
         payload = jwt.decode(
             token,
             settings.JWT_SECRET,
@@ -31,7 +29,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
             "user_id": user_id,
             "email": payload.get("email"),
             "role": payload.get("role", "authenticated"),
-            "token": token, # 👈 ADD THIS LINE (Pass the raw token back)
+            "token": token, 
             "raw": payload
         }
 

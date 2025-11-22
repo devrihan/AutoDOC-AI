@@ -1,4 +1,3 @@
-# ocean-back/routers/refinements.py
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from supabase_client import supabase_client
@@ -15,8 +14,6 @@ class RefinementPayload(BaseModel):
 def add_refinement(payload: RefinementPayload, user = Depends(verify_token)):
     sb = supabase_client()
     
-    # FIX: Authenticate with Supabase using the user's token
-    # This is required to pass the RLS policy "Users can insert refinements to own sections"
     sb.postgrest.auth(user["token"]) 
 
     data = {

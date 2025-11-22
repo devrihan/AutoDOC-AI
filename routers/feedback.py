@@ -1,4 +1,3 @@
-# ocean-back/routers/feedback.py
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from supabase_client import supabase_client
@@ -15,7 +14,6 @@ class FeedbackPayload(BaseModel):
 def add_feedback(payload: FeedbackPayload, user = Depends(verify_token)):
     sb = supabase_client()
     
-    # FIX: Authenticate with Supabase so RLS allows the insert
     sb.postgrest.auth(user["token"])
 
     data = {
