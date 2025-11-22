@@ -1,1 +1,1 @@
-# DocuMATE AI
+# AutoDoc AI

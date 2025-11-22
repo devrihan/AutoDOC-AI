@@ -266,7 +266,6 @@ const NewProject = () => {
                       <SelectItem value="Scientific">
                         Scientific Discovery
                       </SelectItem>
-                      <SelectItem value="basic">Minimalistic</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
