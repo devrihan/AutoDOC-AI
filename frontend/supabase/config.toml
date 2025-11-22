@@ -1,0 +1,13 @@
+project_id = "ymuthqefyeljrtqmkwra"
+
+[functions.generate-outline]
+verify_jwt = false
+
+[functions.generate-content]
+verify_jwt = false
+
+[functions.refine-content]
+verify_jwt = false
+
+[functions.export-document]
+verify_jwt = false
